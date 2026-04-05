@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface-container-lowest: #ffffff;
+  --color-on-secondary-fixed-variant: #a20049;
+  --color-on-error-container: #510017;
+  --color-surface-tint: #5a2af7;
+  --color-background: #f5f6fb;
+  --color-surface-container-high: #e0e2e9;
+  --color-primary-fixed-dim: #9581ff;
+  --color-on-secondary: #ffeff0;
+  --color-outline: #75777b;
+  --color-inverse-surface: #0c0e12;
+  --color-on-secondary-container: #900040;
+  --color-tertiary-dim: #005480;
+  --color-on-error: #ffefef;
+  --color-secondary-dim: #a00048;
+  --color-surface-bright: #f5f6fb;
+  --color-on-surface: #2c2f33;
+  --color-primary-dim: #4e0bec;
+  --color-surface-variant: #dadde4;
+  --color-on-primary-container: #220076;
+  --color-secondary-fixed-dim: #ffadbf;
+  --color-secondary-container: #ffc2ce;
+  --color-error: #b41340;
+  --color-primary-fixed: #a292ff;
+  --color-primary: #5a2af7;
+  --color-outline-variant: #abadb2;
+  --color-on-background: #2c2f33;
+  --color-error-dim: #a70138;
+  --color-secondary-fixed: #ffc2ce;
+  --color-surface-container: #e6e8ee;
+  --color-on-tertiary: #eaf4ff;
+  --color-error-container: #f74b6d;
+  --color-on-surface-variant: #595c60;
+  --color-surface-container-low: #eff1f6;
+  --color-secondary: #b60053;
+  --color-tertiary: #006192;
+  --color-on-tertiary-fixed-variant: #003d5e;
+  --color-on-primary-fixed: #000000;
+  --color-on-primary-fixed-variant: #2b0090;
+  --color-on-tertiary-fixed: #001a2b;
+  --color-on-tertiary-container: #003451;
+  --color-surface: #f5f6fb;
+  --color-tertiary-fixed: #55b9ff;
+  --color-surface-container-highest: #dadde4;
+  --color-on-secondary-fixed: #6d002f;
+  --color-inverse-primary: #927dff;
+  --color-surface-dim: #d1d4dc;
+  --color-primary-container: #a292ff;
+  --color-tertiary-fixed-dim: #39abf5;
+  --color-on-primary: #f6f0ff;
+  --color-inverse-on-surface: #9b9da1;
+  --color-tertiary-container: #55b9ff;
+
+  --font-headline: "Bricolage Grotesque", serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-label: "Plus Jakarta Sans", sans-serif;
+  --font-display: "Unbounded", sans-serif;
+}
+
+@layer base {
+  .dark {
+    --color-background: #0c0e12;
+    --color-on-background: #f5f6fb;
+    --color-surface: #15171c;
+    --color-on-surface: #f5f6fb;
+    --color-surface-container-lowest: #1e2025;
+    --color-surface-container-low: #25272e;
+    --color-surface-container: #2c2f36;
+    --color-surface-container-high: #3a3d45;
+    --color-surface-container-highest: #484b54;
+    --color-on-surface-variant: #abadb2;
+    --color-outline: #8e9196;
+    --color-outline-variant: #44474b;
+    --color-primary: #a292ff;
+    --color-on-primary: #1e0060;
+    --color-primary-container: #3f2ab0;
+    --color-on-primary-container: #e6deff;
+  }
+}
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  letter-spacing: -0.01em;
+  @apply bg-background text-on-background transition-colors duration-300;
+}
+.font-headline {
+  font-family: "Bricolage Grotesque", serif;
+}
+.font-label {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  letter-spacing: 0.05em;
+}
+.glass-sidebar {
+  background: rgba(230, 232, 238, 0.4);
+  backdrop-filter: blur(24px);
+}
+.dark .glass-sidebar {
+  background: rgba(12, 14, 18, 0.4);
+}
+.glass-search {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.dark .glass-search {
+  background: rgba(30, 32, 37, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.ambient-shadow {
+  box-shadow: 0 12px 40px rgba(44, 47, 51, 0.06);
+}
+.dark .ambient-shadow {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
