@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dashboardtemplate/server/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
@@ -49,17 +50,17 @@ func AIChat(c *fiber.Ctx) error {
 	ctx := context.Background()
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
-		return c.Status(500).JSON(fiber.Map{"error": "GEMINI_API_KEY not set"})
+		return utils.RespondWithError(c, fmt.Errorf("GEMINI_API_KEY not set"), "AI services are currently unavailable", 503)
 	}
 
 	req := new(ChatRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		return utils.RespondWithError(c, err, "Invalid request details", 400)
 	}
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to create Gemini client"})
+		return utils.RespondWithError(c, err, "Could not initialize AI service", 500)
 	}
 	defer client.Close()
 
@@ -112,7 +113,7 @@ func AIChat(c *fiber.Ctx) error {
 
 	resp, err := session.SendMessage(ctx, genai.Text(req.Message))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Failed to get response: %v", err)})
+		return utils.RespondWithError(c, err, "We encountered an issue getting a response from the AI", 500)
 	}
 
 	// Handle Tool Calling
@@ -150,7 +151,7 @@ func AIChat(c *fiber.Ctx) error {
 			Response: map[string]interface{}{"content": toolResult},
 		})
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Failed to send tool result: %v", err)})
+			return utils.RespondWithError(c, err, "Failed to process AI tool request", 500)
 		}
 	}
 

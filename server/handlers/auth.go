@@ -18,7 +18,7 @@ func Signup(c *fiber.Ctx) error {
 
 	var req SignupRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.RespondWithError(c, err, "Invalid request details provided", 400)
 	}
 
 	validRoles := map[string]bool{"user": true, "ceo": true, "manager": true}
@@ -26,7 +26,7 @@ func Signup(c *fiber.Ctx) error {
 		req.Role = "user"
 	}
 	if !validRoles[req.Role] {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid role selected"})
+		return utils.RespondWithError(c, nil, "The selected role is not valid", 400)
 	}
 
 	status := "active"
@@ -44,7 +44,7 @@ func Signup(c *fiber.Ctx) error {
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		return utils.RespondWithError(c, err, "Could not create your account", 400)
 	}
 
 	// If pending manager, return message
@@ -73,26 +73,26 @@ func Login(c *fiber.Ctx) error {
 
 	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.RespondWithError(c, err, "Invalid login details provided", 400)
 	}
 
 	var user models.User
 	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
+		return utils.RespondWithError(c, err, "The email or password you entered is incorrect", 401)
 	}
 
 	// Verification check removed as requested
 
 	if user.Status == "pending" {
-		return c.Status(401).JSON(fiber.Map{"error": "Your account is pending CEO approval"})
+		return utils.RespondWithError(c, nil, "Your account is currently waiting for approval from the CEO", 401)
 	}
 
 	if user.Status == "rejected" {
-		return c.Status(401).JSON(fiber.Map{"error": "Your application was rejected"})
+		return utils.RespondWithError(c, nil, "Your application was not approved. Please contact support for more information.", 401)
 	}
 
 	if !utils.CheckPasswordHash(req.Password, user.Password) {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
+		return utils.RespondWithError(c, nil, "The email or password you entered is incorrect", 401)
 	}
 
 	at, rt, _ := utils.GenerateTokens(user)
@@ -108,12 +108,12 @@ func Login(c *fiber.Ctx) error {
 func VerifyEmail(c *fiber.Ctx) error {
 	token := c.Query("token")
 	if token == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "Token is required"})
+		return utils.RespondWithError(c, nil, "A verification token is required to continue", 400)
 	}
 
 	var user models.User
 	if err := database.DB.Where("verification_token = ?", token).First(&user).Error; err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired token"})
+		return utils.RespondWithError(c, err, "The verification link is invalid or has expired", 400)
 	}
 
 	user.IsEmailVerified = true
@@ -129,7 +129,7 @@ func ForgotPassword(c *fiber.Ctx) error {
 	}
 	var req ForgotRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		return utils.RespondWithError(c, err, "Please provide a valid email address", 400)
 	}
 
 	var user models.User
@@ -156,12 +156,12 @@ func ResetPassword(c *fiber.Ctx) error {
 	}
 	var req ResetRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		return utils.RespondWithError(c, err, "Invalid request details provided", 400)
 	}
 
 	var user models.User
 	if err := database.DB.Where("reset_password_token = ? AND reset_password_expires > ?", req.Token, time.Now()).First(&user).Error; err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired reset token"})
+		return utils.RespondWithError(c, err, "The password reset link is invalid or has expired", 400)
 	}
 
 	user.Password = req.Password
@@ -179,21 +179,21 @@ func Refresh(c *fiber.Ctx) error {
 
 	var req RefreshRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.RespondWithError(c, err, "Invalid refresh attempt", 400)
 	}
 
 	userId, _, err := utils.ValidateToken(req.RefreshToken, true)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid refresh token"})
+		return utils.RespondWithError(c, err, "Your session has expired. Please log in again.", 401)
 	}
 
 	var user models.User
 	if err := database.DB.First(&user, userId).Error; err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "User not found"})
+		return utils.RespondWithError(c, err, "User account not found", 401)
 	}
 
 	if user.Status != "active" {
-		return c.Status(401).JSON(fiber.Map{"error": "Account not active"})
+		return utils.RespondWithError(c, nil, "Your account is not active. Please contact support.", 401)
 	}
 
 	at, rt, _ := utils.GenerateTokens(user)

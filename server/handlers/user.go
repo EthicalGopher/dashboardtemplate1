@@ -16,7 +16,7 @@ func GetProfile(c *fiber.Ctx) error {
 	userId := c.Locals("user_id").(uint)
 	var user models.User
 	if err := database.DB.First(&user, userId).Error; err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+		return utils.RespondWithError(c, err, "We couldn't find your profile information", 404)
 	}
 	return c.JSON(user)
 }
@@ -33,21 +33,21 @@ func UpdateProfile(c *fiber.Ctx) error {
 
 	var req UpdateRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.RespondWithError(c, err, "Invalid update details provided", 400)
 	}
 
 	var user models.User
 	if err := database.DB.First(&user, userId).Error; err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+		return utils.RespondWithError(c, err, "User account not found", 404)
 	}
 
 	// 1. If changing Email or Password, require CurrentPassword
 	if (req.Email != "" && req.Email != user.Email) || req.Password != "" {
 		if req.CurrentPassword == "" {
-			return c.Status(400).JSON(fiber.Map{"error": "Current password is required to change email or password"})
+			return utils.RespondWithError(c, nil, "Please provide your current password to change your email or password", 400)
 		}
 		if !utils.CheckPasswordHash(req.CurrentPassword, user.Password) {
-			return c.Status(401).JSON(fiber.Map{"error": "Incorrect current password"})
+			return utils.RespondWithError(c, nil, "The current password you entered is incorrect", 401)
 		}
 	}
 
@@ -72,7 +72,7 @@ func UpdateProfile(c *fiber.Ctx) error {
 	}
 
 	if err := database.DB.Save(&user).Error; err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		return utils.RespondWithError(c, err, "Could not update your profile. This email might already be in use.", 400)
 	}
 
 	message := "Profile updated successfully"
@@ -89,16 +89,16 @@ func UpdateProfile(c *fiber.Ctx) error {
 func ConfirmEmailChange(c *fiber.Ctx) error {
 	token := c.Query("token")
 	if token == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "Token is required"})
+		return utils.RespondWithError(c, nil, "A confirmation token is required", 400)
 	}
 
 	var user models.User
 	if err := database.DB.Where("email_change_token = ?", token).First(&user).Error; err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired token"})
+		return utils.RespondWithError(c, err, "The confirmation link is invalid or has expired", 400)
 	}
 
 	if user.PendingEmail == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "No pending email change found"})
+		return utils.RespondWithError(c, nil, "No pending email change was found for this account", 400)
 	}
 
 	user.Email = user.PendingEmail
@@ -114,7 +114,7 @@ func UploadAvatar(c *fiber.Ctx) error {
 	
 	file, err := c.FormFile("avatar")
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "No file uploaded"})
+		return utils.RespondWithError(c, err, "No image file was uploaded", 400)
 	}
 
 	extension := filepath.Ext(file.Filename)
@@ -126,12 +126,12 @@ func UploadAvatar(c *fiber.Ctx) error {
 	}
 
 	if err := c.SaveFile(file, savePath); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to save file"})
+		return utils.RespondWithError(c, err, "Failed to save your profile picture", 500)
 	}
 
 	var user models.User
 	if err := database.DB.First(&user, userId).Error; err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+		return utils.RespondWithError(c, err, "User account not found", 404)
 	}
 
 	user.Avatar = "/uploads/" + filename
